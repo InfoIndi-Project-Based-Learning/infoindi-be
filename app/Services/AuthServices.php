@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Services;
+use App\Exceptions\InvalidCredentialsException;
+use App\Exceptions\UserAlreadyExistException;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -10,11 +12,10 @@ class AuthServices
 
     public function register($data)
     {
-        $existingUser = User::where('email', $data['email'])->first();
-
-        if ($existingUser) {
-            return null;
+        if(User::where('email', $data['email'])->exists()) {
+            throw new UserAlreadyExistException();
         }
+
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -29,7 +30,7 @@ class AuthServices
     public function login($data)
     {
         if (!$token = auth('api')->attempt($data)) {
-            return null;
+            throw new InvalidCredentialsException();
         }
 
         return $this->tokenPayload(auth('api')->user(), $token);

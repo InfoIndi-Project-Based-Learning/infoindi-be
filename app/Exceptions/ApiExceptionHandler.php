@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Exceptions\InvalidCredentialsException;
+use App\Exceptions\UserAlreadyExistException;
 use App\Traits\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +21,13 @@ class ApiExceptionHandler
 
         if($e instanceof AuthenticationException){
             return $this->error('Unauthenticated', 401);
+        }
+
+        if($e instanceof UserAlreadyExistException){
+            return $this->error($e->getMessage(), 409);
+        }
+        if($e instanceof InvalidCredentialsException){
+            return $this->error($e->getMessage(), $e->getCode());
         }
 
         if($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException){

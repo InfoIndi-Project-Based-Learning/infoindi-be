@@ -19,20 +19,14 @@ class AuthController extends BaseApiController
     public function register(RegisterRequest $request)
     {
         $payload = $request->only('name', 'email', 'password');
-        $result = $this->authServices->register($payload);
-        if (!$result) {
-            return $this->error('User already exists.', 409);
-        }
-        return $this->created($result, 'User registered successfully.');
+        
+        return $this->created($this->authServices->register($payload), 'User registered successfully.');
     }
 
     public function login(LoginRequest $request)
     {
         $payload = $request->only('email', 'password');
-        $result = $this->authServices->login($payload);
-        if (!$result) {
-            return $this->error('Invalid credentials.', 401);
-        }
-        return $this->created($result, 'User logged in successfully.');
+        
+        return $this->success($this->authServices->login($payload), 'User logged in successfully.');
     }
 }
