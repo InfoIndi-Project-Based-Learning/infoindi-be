@@ -6,11 +6,13 @@ use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\UserAlreadyExistException;
 use App\Traits\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
-class ApiExceptionHandler 
+class ApiExceptionHandler
 {
     use ApiResponse;
 
@@ -27,24 +29,21 @@ class ApiExceptionHandler
             return $this->error($e->getMessage(), 409);
         }
         if($e instanceof InvalidCredentialsException){
-            return $this->error($e->getMessage(), $e->getCode());
+            return $this->error($e->getMessage(), 401);
         }
 
-        if($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException){
+        if($e instanceof ModelNotFoundException){
             return $this->error('Resource not found', 404);
         }
 
-        if($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException){
-            if ($e->getPrevious() instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
-                return $this->error('Resource not found', 404);
-            }
+        if($e instanceof NotFoundHttpException){
             return $this->error('Route not found', 404);
         }
 
         if($e instanceof HttpExceptionInterface){
             return $this->error(
                 $e->getMessage() ?: 'Http Error',
-                $e->getStatusCode()
+                $e->getStatusCode() ?: 500
             );
         }
         

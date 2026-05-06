@@ -2,30 +2,42 @@
 
 namespace App\Traits;
 
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
+
 
 trait ApiResponse
 {
-    public function success(mixed $data, string $message = "Success",int $code = 200)
-    {
+    public function success(
+        mixed $data, 
+        string $message = "Success",
+        int $code = 200
+        ): JsonResponse {
         return response()->json([
             'status' => true,
             'message' => $message,
             'data' => $data
-        ]);
+        ], $code);
     }
 
-    public function created(mixed $data, string $message = "Created", int $code = 201)
-    {
+    public function created(
+        mixed $data, 
+        string $message = "Created", 
+        int $code = 201
+        ): JsonResponse {
         return $this->success($data, $message, 201);
     }
 
-    public function paginated(LengthAwarePaginator $paginator, $message = "Success", $code = 200)
-    {
+    public function paginated(
+        LengthAwarePaginator $paginator,
+        $resource,  
+        $message = "Success", 
+        $code = 200
+        ): JsonResponse {
         return response()->json([
             'status' => true,
             'message' => $message,
-            'data' => $paginator->items(),
+            'data' => $resource::collection($paginator->items()),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'per_page' => $paginator->perPage(),
@@ -37,8 +49,11 @@ trait ApiResponse
         ]);
     }
 
-    public function error(string $message, int $code = 400, $data = null)
-    {
+    public function error(
+        string $message, 
+        int $code = 400, 
+        $data = null
+        ): JsonResponse {
         $reponse = $data? [
             'status' => false,
             'message' => $message,
@@ -47,6 +62,7 @@ trait ApiResponse
             'status' => false,
             'message' => $message
         ];
+
         return response()->json($reponse, $code);
     }
 }

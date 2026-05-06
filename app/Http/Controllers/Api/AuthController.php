@@ -18,15 +18,22 @@ class AuthController extends BaseApiController
 
     public function register(RegisterRequest $request)
     {
-        $payload = $request->only('name', 'email', 'password');
         
-        return $this->created($this->authServices->register($payload), 'User registered successfully.');
+        return $this->created($this->authServices->register($request->validated()), 'User registered successfully.');
     }
 
     public function login(LoginRequest $request)
     {
-        $payload = $request->only('email', 'password');
-        
-        return $this->success($this->authServices->login($payload), 'User logged in successfully.');
+        return $this->success($this->authServices->login($request->validated()), 'User logged in successfully.');
+    }
+
+    public function logout()
+    {
+        auth('api')->logout();
+        return $this->success(null, 'User logged out successfully.');
+    }
+
+    public function me(){
+        return $this->success(auth('api')->user(), 'User data fetched successfully.');
     }
 }

@@ -5,26 +5,22 @@ use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\UserAlreadyExistException;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+
 
 class AuthServices
 {
 
     public function register($data)
     {
-        if(User::where('email', $data['email'])->exists()) {
+        $userService = new UserService();
+
+        if($userService->findByEmail($data['email'])) {
             throw new UserAlreadyExistException();
         }
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password'])
-        ]);
-
+        $user = $userService->createUser($data);
         $token = auth('api')->login($user);
-
-        return $this->tokenPayload($user, $token);
+        return $this->tokenPayload($user->load('profile'), $token);
     }
 
     public function login($data)
@@ -33,10 +29,14 @@ class AuthServices
             throw new InvalidCredentialsException();
         }
 
-        return $this->tokenPayload(auth('api')->user(), $token);
+        return $this->tokenPayload(
+            auth('api')
+            ->user()
+            ->load('profile'), 
+            $token);
     }
 
-    public function tokenPayload($user, $token)
+    public function tokenPayload(User $user, string $token)
     {
         return [
             'user' => new UserResource($user),
