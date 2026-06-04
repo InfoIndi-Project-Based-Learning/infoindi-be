@@ -26,7 +26,7 @@ class UserController extends BaseApiController
     public function profile(User $user)
     {
         $user = $this->userService->getUserInformation($user);
-        return $this->success($user, 'User information fetched successfully.');
+        return $this->success(new UserResource($user), 'User information fetched successfully.');
     }
 
     public function follow(User $user, User $targetUser)
@@ -53,17 +53,66 @@ class UserController extends BaseApiController
         return $this->success($following, 'Following fetched successfully.');
     }
 
+    public function likedPosts(User $user)
+    {
+        $posts = $user->likedPosts()->with(['category', 'user.profile', 'images'])->get();
+        return $this->success(\App\Http\Resources\PostResource::collection($posts), 'Liked posts fetched successfully.');
+    }
+
     public function updateProfile(User $user, Request $request)
     {
-        $user = $this->userService->updateProfile($user, $request->all());
+        $data = $request->except('avatar');
+
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar'] = url('storage/' . $path);
+        } elseif ($request->has('avatar') && is_string($request->avatar)) {
+            $data['avatar'] = $request->avatar;
+        }
+
+        $user = $this->userService->updateProfile($user, $data);
         return $this->success($user, 'User profile updated successfully.');
     }
 
 
     public function update(User $user, Request $request)
     {
-        $user = $this->userService->update($user, $request->all());
+        $data = $request->all();
+        
+        \Log::info('User Update Payload:', $data);
+        \Log::info('Files:', $request->allFiles());
+
+        if ($request->hasFile('profile.avatar')) {
+            $path = $request->file('profile.avatar')->store('avatars', 'public');
+            $data['profile']['avatar'] = url('storage/' . $path);
+        } elseif ($request->has('profile.avatar') && is_string($request->input('profile.avatar'))) {
+            // Keep existing avatar string if any
+        }
+        
+        // Sometimes frontend sends it flat
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $data['profile']['avatar'] = url('storage/' . $path);
+        }
+
+        $user = $this->userService->update($user, $data);
         return $this->success($user, 'User updated successfully.');
+    }
+
+    public function updatePassword(User $user, Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        $success = $this->userService->changePassword($user, $request->current_password, $request->new_password);
+
+        if (!$success) {
+            return $this->error('Password saat ini salah.', 400);
+        }
+
+        return $this->success(null, 'Password berhasil diperbarui.');
     }
 
     public function destroy(User $user)

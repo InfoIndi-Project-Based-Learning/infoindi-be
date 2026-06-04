@@ -3,6 +3,9 @@
 namespace App\Exceptions;
 
 use App\Exceptions\InvalidCredentialsException;
+use App\Exceptions\PostAlreadyReportedException;
+use App\Exceptions\UnauthorizedActionException;
+use App\Exceptions\UserBannedException;
 use App\Exceptions\UserAlreadyExistException;
 use App\Traits\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
@@ -30,6 +33,18 @@ class ApiExceptionHandler
         }
         if($e instanceof InvalidCredentialsException){
             return $this->error($e->getMessage(), 401);
+        }
+
+        if($e instanceof PostAlreadyReportedException){
+            return $this->error($e->getMessage(), 409);
+        }
+
+        if($e instanceof UnauthorizedActionException){
+            return $this->error($e->getMessage(), 403);
+        }
+
+        if($e instanceof UserBannedException){
+            return $this->error($e->getMessage(), 403);
         }
 
         if($e instanceof ModelNotFoundException){

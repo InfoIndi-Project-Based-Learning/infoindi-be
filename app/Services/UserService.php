@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Traits\HasQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -10,10 +11,18 @@ use Illuminate\Support\Facades\Hash;
 class UserService
 {
     use HasQuery;
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function getUsers(Request $request)
     {
         $query = User::query()->with('profile');
-        $query = $this->applySearch($query, $request->get('search'), ['name', 'email']);
+        $query = $this->applySearch($query, $request->get('search'), ['name', 'username', 'email']);
         $query = $this->applyFilter($query, $request, ['is_mahasiswa']);
 
         return $this->paginate($query, $request);
@@ -21,10 +30,13 @@ class UserService
 
     public function createUser(array $data)
     {
+        $username = strtolower($data['username']);
         $user = User::create([
-            'name' => $data['name'],
+            'name' => $data['name'] ?? $username,
+            'username' => $username,
             'email' => $data['email'],
-            'password' => Hash::make($data['password'])
+            'password' => Hash::make($data['password']),
+            'role' => 'user'
         ]);
 
         $user->profile()->create([
@@ -41,6 +53,13 @@ class UserService
         } else {
             $user->profile()->create($data);
         }
+
+        // Check if mandatory fields are now present to mark profile as complete
+        $profile = $user->fresh()->profile;
+        if (!$user->is_profile_complete && $profile && $profile->bio && $profile->phone) {
+            $user->update(['is_profile_complete' => true]);
+        }
+
         return $user->load('profile');
     }
 
@@ -59,10 +78,10 @@ class UserService
         $user = $user->load('profile');
         $followersCount = $user->followers()->count();
         $followingCount = $user->following()->count();
-        $followers = $user->followers()->select('users.id', 'users.name', 'users.email')->get();
-        $following = $user->following()->select('users.id', 'users.name', 'users.email')->get();
+        $followers = $user->followers()->select('users.id', 'users.name', 'users.username', 'users.email')->get();
+        $following = $user->following()->select('users.id', 'users.name', 'users.username', 'users.email')->get();
 
-        return compact('user', 'followersCount', 'followingCount', 'followers', 'following');
+        return $user;
     }
 
     public function changePassword(User $user, string $currentPassword, string $newPassword)
@@ -85,9 +104,21 @@ class UserService
     public function update(User $user, array $data)
     {
         $user->update($data);
-        if(isset($data['profile'])){
-            $user->profile()->update($data['profile']);
+        
+        if (isset($data['profile'])) {
+            if ($user->profile) {
+                $user->profile()->update($data['profile']);
+            } else {
+                $user->profile()->create($data['profile']);
+            }
         }
+
+        // Check if mandatory fields are now present to mark profile as complete
+        $profile = $user->fresh()->profile;
+        if (!$user->is_profile_complete && $profile && $profile->bio && $profile->phone) {
+            $user->update(['is_profile_complete' => true]);
+        }
+
         return $user->load('profile');
     }
 
@@ -98,6 +129,10 @@ class UserService
         }
 
         $user->following()->syncWithoutDetaching($targetUser->id);
+
+        // Notify followed user
+        $this->notificationService->notifyNewFollower($user, $targetUser);
+
         return true;
     }
 
@@ -123,7 +158,7 @@ class UserService
     public function getFollowers(User $user)
     {
         return $user->followers()
-        ->select('users.id', 'users.name', 'users.email')
+        ->select('users.id', 'users.name', 'users.username', 'users.email')
         ->with([
                 'profile:id,user_id,avatar,is_mahasiswa'
         ])
@@ -133,7 +168,7 @@ class UserService
     public function getFollowing(User $user)
     {
         return $user->following()
-        ->select('users.id', 'users.name', 'users.email')
+        ->select('users.id', 'users.name', 'users.username', 'users.email')
         ->with([
                 'profile:id,user_id,avatar,is_mahasiswa'
         ])
