@@ -13,25 +13,34 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        Category::insert([[
-            'category_name' => 'Jualan',
-            'slug' => 'jualan',
-        ],
-        [
-            'category_name' => 'Jasa',
-            'slug' => 'jasa',
-        ],
-        [
-            'category_name' => 'Info Lomba',
-            'slug' => 'info-lomba',
-        ],
-        [
-            'category_name' => 'Lowongan Kerja',
-            'slug' => 'loker',
-        ],
-        [
-            'category_name' => 'Lainnya',
-            'slug' => 'lainnya',
-        ]]);
+        $categories = [
+            [
+                'category_name' => 'Jualan',
+                'slug' => 'jualan',
+            ],
+            [
+                'category_name' => 'Jasa',
+                'slug' => 'jasa',
+            ],
+            [
+                'category_name' => 'Info Lomba',
+                'slug' => 'info-lomba',
+            ],
+            [
+                'category_name' => 'Lowongan Pekerjaan',
+                'slug' => 'lowongan-pekerjaan',
+            ],
+            [
+                'category_name' => 'Lainnya',
+                'slug' => 'lainnya',
+            ]
+        ];
+
+        foreach ($categories as $category) {
+            Category::updateOrCreate(
+                ['slug' => $category['slug']],
+                ['category_name' => $category['category_name']]
+            );
+        }
     }
 }

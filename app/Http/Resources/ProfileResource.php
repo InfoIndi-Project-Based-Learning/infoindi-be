@@ -21,6 +21,13 @@ class ProfileResource extends JsonResource
             'instagram_url' => $this->instagram_url,
             'bio' => $this->bio,
             'is_mahasiswa' => $this->is_mahasiswa,
+            'fakultas' => $this->fakultas,
+            'jurusan' => $this->jurusan,
+            'angkatan' => $this->angkatan,
+            'gender' => $this->gender,
+            'alamat' => $this->alamat,
+            'tanggal_lahir' => $this->tanggal_lahir,
+            'instansi' => $this->instansi,
         ];
     }
 }

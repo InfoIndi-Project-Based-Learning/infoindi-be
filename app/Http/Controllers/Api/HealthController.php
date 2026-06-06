@@ -16,4 +16,19 @@ class HealthController extends BaseApiController
         ];
         return $this->success($data, 'Success get data', 200);
     }
+
+    public function statistics()
+    {
+        $usersCount = \App\Models\User::count();
+        $postsCount = \App\Models\Post::count();
+        $categoriesCount = \App\Models\Category::count();
+
+        $data = [
+            'users' => $usersCount,
+            'posts' => $postsCount,
+            'categories' => $categoriesCount,
+        ];
+
+        return $this->success($data, 'Success get statistics data', 200);
+    }
 }

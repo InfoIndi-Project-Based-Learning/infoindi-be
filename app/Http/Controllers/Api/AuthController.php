@@ -34,6 +34,6 @@ class AuthController extends BaseApiController
     }
 
     public function me(){
-        return $this->success(auth('api')->user(), 'User data fetched successfully.');
+        return $this->success(new \App\Http\Resources\UserResource(auth('api')->user()->load('profile')), 'User data fetched successfully.');
     }
 }

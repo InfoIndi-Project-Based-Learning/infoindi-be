@@ -26,8 +26,30 @@ class StorePostRequest extends FormRequest
             'post_name' => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
-            'user_id' => 'required|exists:users,id',
-            'banner_url' => 'nullable|url|max:255',
+            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images' => 'nullable|array|max:10',
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'post_name.required' => 'Post name is required.',
+            'post_name.string' => 'Post name must be a string.',
+            'post_name.max' => 'Post name must not exceed 255 characters.',
+            'description.required' => 'Description is required.',
+            'description.string' => 'Description must be a string.',
+            'category_id.required' => 'Category is required.',
+            'category_id.exists' => 'The selected category does not exist.',
+            'banner_image.image' => 'Banner must be an image.',
+            'banner_image.mimes' => 'Banner must be a file of type: jpeg, png, jpg, webp.',
+            'banner_image.max' => 'Banner may not be greater than 2048 kilobytes.',
+            'images.array' => 'Images must be an array.',
+            'images.max' => 'Images may not have more than 10 items.',
+            'images.*.image' => 'Each additional image must be an image.',
+            'images.*.mimes' => 'Each additional image must be a file of type: jpeg, png, jpg, webp.',
+            'images.*.max' => 'Each additional image may not be greater than 2048 kilobytes.',
         ];
     }
 }
